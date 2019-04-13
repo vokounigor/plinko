@@ -10,6 +10,8 @@ let bounds = [];
 let cols = 8;
 let rows = 7;
 let offset = 20;
+let score = 0;
+let balls = 10;
 
 function setup() {
     createCanvas(400, 600);
@@ -17,8 +19,6 @@ function setup() {
     engine = Engine.create();
     world = engine.world;
     world.gravity.y = 1.1;
-    console.log(world);
-    particles[0] = new Particle(220, 20, 8);
     let spacing = width / rows - offset / rows;
 
     // Creating the pegs
@@ -43,7 +43,7 @@ function setup() {
     bounds.push(b1);
     bounds.push(b2);
 
-    // Buckets
+    // Buckets and point pads
     for (let i = 0; i < cols + 1; i++) {
         let x = 7 + i * (spacing + 0.3);
         let h = 70;
@@ -53,15 +53,30 @@ function setup() {
         bounds.push(newB);
     }
 
+    // Collision event
+    function collision(event) {
+        let pairs = event.pairs;
+        for (let i = 0; i < pairs.length; i++) {
+            let bodyA = pairs[i].bodyA.label;
+            let bodyB = pairs[i].bodyB.label;
+            if (bodyA == 'peg' || bodyB == 'peg') {
+                score++;
+            }
+        }
+
+    }
+
+    Events.on(engine, 'collisionStart', collision)
+
     Engine.run(engine);
 }
 
 function draw() {
     background(0);
-
-    if (frameCount % 120 == 0) {
-        particles.push(new Particle(random(180, 220), 20, 8));
-    }
+    fill(255);
+    textSize(15);
+    text("Score: " + score, width - 70, 20);
+    text("Balls remaining: " + balls, 10, 20);
 
     for (let i = 0; i < particles.length; i++) {
         if (particles[i].isOffScreen()) {
@@ -75,9 +90,17 @@ function draw() {
 
     pegs.forEach(p => p.show());
     bounds.forEach(b => b.show());
-
 }
 
 function mousePressed() {
-    particles.push(new Particle(mouseX, 50, 8));
+    if (balls > 0) {
+        if (mouseX < 30) {
+            particles.push(new Particle(mouseX + 30, 50, 8));
+        } else if (mouseX > width - 30) {
+            particles.push(new Particle(mouseX - 30, 50, 8));
+        } else {
+            particles.push(new Particle(mouseX, 50, 8));
+        }
+        balls--;
+    }
 }
